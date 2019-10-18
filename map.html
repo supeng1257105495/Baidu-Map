@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="keywords" content="百度地图,百度地图API，百度地图自定义工具，百度地图所见即所得工具" />
+    <meta name="description" content="百度地图API自定义地图，帮助用户在可视化操作下生成百度地图" />
+    <title>百度地图API自定义地图</title>
+    <!--引用百度地图API-->
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=RdYvcD7MtwOHGy9B2CQX8THP9CUnkrkT"></script>
+    <script type="text/javascript" src="http://api.map.baidu.com/library/GeoUtils/1.2/src/GeoUtils_min.js"></script>
+  </head>
+
+  <body>
+    <!--百度地图容器-->
+    <div style="width:700px;height:550px;border:#ccc solid 1px;font-size:12px" id="map"></div>
+    <h4 id="text"></h4>
+  </body>
+  <script type="text/javascript">
+    //创建和初始化地图函数：
+    function initMap() {
+      createMap(); //创建地图
+      setMapEvent(); //设置地图事件
+      addMapControl(); //向地图添加控件
+      //   addMapOverlay(); //向地图添加覆盖物
+    }
+
+    function createMap() {
+      map = new BMap.Map('map');
+      map.centerAndZoom(new BMap.Point(121.48054, 31.235929), 12);
+
+      var geolocation = new BMap.Geolocation();
+      geolocation.getCurrentPosition(
+        function(r) {
+          if (this.getStatus() == BMAP_STATUS_SUCCESS) {
+            r.point.lat -= 0.05718171;
+            r.point.lng -= 0.02848149;
+            addMapOverlay(r.point, 'A');
+            map.setZoom(18);
+            map.panTo(r.point);
+
+            var pointS = [
+              { local: new BMap.Point(121.459254, 31.192475), text: 'B' },
+              { local: new BMap.Point(121.460822, 31.19193), text: 'C' },
+              { local: new BMap.Point(121.45828, 31.192788), text: 'D' }
+            ];
+
+            var circle = new BMap.Circle(r.point, 100, {
+              fillColor: 'blue',
+              strokeWeight: 1,
+              fillOpacity: 0.3,
+              strokeOpacity: 0.3,
+              enableEditing: true
+            });
+
+            map.addOverlay(circle);
+            var text = '';
+
+            isCircle(r.point, circle) ? (text += 'A在；') : 'A不在；';
+
+            pointS.forEach(x => {
+              addMapOverlay(x.local, x.text);
+              isCircle(x.local, circle) ? (text += `${x.text}在；`) : (text += `${x.text}不在；`);
+            });
+
+            document.getElementById('text').innerHTML = text;
+
+          } else {
+          
+          }
+        },
+        { enableHighAccuracy: true }
+      );
+    }
+
+    function isCircle(point, circle) {
+      //检查类型是否正确
+      if (!(point instanceof BMap.Point) || !(circle instanceof BMap.Circle)) {
+        return false;
+      }
+      //point与圆心距离小于圆形半径，则点在圆内，否则在圆外
+      var c = circle.getCenter();
+      var r = circle.getRadius();
+      console.log(point);
+      console.log(c);
+      var dis = BMapLib.GeoUtils.getDistance(point, c);
+      if (dis <= r) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    function setMapEvent() {
+      map.enableScrollWheelZoom();
+      map.enableKeyboard();
+      map.enableDragging();
+      map.enableDoubleClickZoom();
+    }
+
+    function addClickHandler(target, window) {
+      target.addEventListener('click', function() {
+        target.openInfoWindow(window);
+      });
+    }
+
+    function addMapOverlay(print, text) {
+      var label = new BMap.Label(text, { offset: new BMap.Size(20, -10) });
+      var mk = new BMap.Marker(print);
+      mk.setLabel(label);
+      map.addOverlay(mk);
+    }
+
+    //向地图添加控件
+    function addMapControl() {
+      var scaleControl = new BMap.ScaleControl({ anchor: BMAP_ANCHOR_BOTTOM_LEFT });
+      scaleControl.setUnit(BMAP_UNIT_IMPERIAL);
+      map.addControl(scaleControl);
+      var navControl = new BMap.NavigationControl({ anchor: BMAP_ANCHOR_TOP_LEFT, type: BMAP_NAVIGATION_CONTROL_LARGE });
+      map.addControl(navControl);
+      var overviewControl = new BMap.OverviewMapControl({ anchor: BMAP_ANCHOR_BOTTOM_RIGHT, isOpen: true });
+      map.addControl(overviewControl);
+    }
+
+    var map;
+
+    window.onload = initMap(); //异步加载地图
+  </script>
+</html>
